@@ -10,6 +10,8 @@ const TR = '\x1b[0m';
 const CY = '\x1b[33m';
 const CR = '\x1b[41m';
 
+const DIST_FOLDER = './dist_turbo360';
+
 if (!shell.which('git')) {
   shell.echo(
     `\x1b[30;41m You must have git installed to run the net.create/Turbo360 devtool \x1b[0m`
@@ -34,8 +36,8 @@ switch (param1) {
 function f_PackageWebTurbo360(template = '_blank') {
   console.log(`\n`);
   console.log(PR, `packaging for ${CY}Turbo-360${TR}`);
-  console.log(PR, `erasing ./public and ./dist directories`);
-  shell.rm('-rf', './dist', './public');
+  console.log(PR, `erasing ./public and ${DIST_FOLDER} directories`);
+  shell.rm('-rf', DIST_FOLDER, './public');
   console.log(PR, `compiling web into ./public`);
 
   // Package the net.create application in "standalone" mode
@@ -46,10 +48,10 @@ function f_PackageWebTurbo360(template = '_blank') {
   // See: https://github.com/Vertex-Labs/base-template-netcreate
   console.log(
     PR,
-    `cloning latest ${CY}Turbo-360${TR} net.create base template into ./dist`
+    `cloning latest ${CY}Turbo-360${TR} net.create base template into ${DIST_FOLDER}`
   );
   res = shell.exec(
-    'git clone https://github.com/Vertex-Labs/base-template-netcreate.git dist',
+    `git clone https://github.com/Vertex-Labs/base-template-netcreate.git ${DIST_FOLDER}`,
     { silent: true }
   );
   if (res.code !== 0) {
@@ -61,7 +63,7 @@ function f_PackageWebTurbo360(template = '_blank') {
   }
 
   console.log(PR, `installing ${CY}Turbo-360${TR} Node dependencies...`);
-  shell.cd('./dist');
+  shell.cd(DIST_FOLDER);
   res = shell.exec('npm i --omit=dev', { silent: true });
   if (res.code !== 0) {
     console.error(
@@ -75,11 +77,13 @@ function f_PackageWebTurbo360(template = '_blank') {
 
   console.log(PR, `Copying web-app...`);
   // Copy the created net.create web-app bundle into the template
-  fs.copySync('./public', './dist/public');
-  fs.moveSync('./dist/public/index.ejs', './dist/views/home.html');
-  fs.removeSync('./dist/public/index.html');
+  fs.copySync('./public', `${DIST_FOLDER}/public`);
+  fs.moveSync(`${DIST_FOLDER}/public/index.ejs`, `${DIST_FOLDER}/views/home.html`);
+  fs.removeSync(`${DIST_FOLDER}/public/index.html`);
 
   // TODO: Consider copying TOML and other files
+  //  Rename TOML/DB files to general name "db" and "template.toml" so they can be located without
+  //  having a dynamic configuration in URSYS Turbo360  backend
   // console.log(PR, `Copying resources (using template: ${template})`);
   // fs.copySync(`./templates/${template}/resources`, './dist/public/resources');
 
@@ -97,7 +101,7 @@ function f_DeployWebTurbo360() {
   console.log(PR, `Please select the ${CY}Turbo-360${TR} project to deploy to:`);
 
   // First, connect the local project:
-  shell.cd('./dist');
+  shell.cd(DIST_FOLDER);
 
   try {
     child_process.execFileSync('npx turbo', ['connect'], {
